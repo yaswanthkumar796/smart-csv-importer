@@ -1,19 +1,130 @@
-*, *::before, *::after {
+:root {
+  --bg-color: #f4f7f6;
+  --card-bg: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --primary: #4361ee;
+  --primary-hover: #3a53d0;
+  --danger-bg: #ffebee;
+  --danger-text: #c62828;
+  --warning-bg: #fff8e1;
+  --warning-text: #f57f17;
+  --border: #e0e0e0;
+}
+
+* {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-html, body {
-  height: 100%;
-  width: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+body {
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  padding: 2rem;
 }
 
-#root {
-  min-height: 100vh;
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.upload-section {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.file-input {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.btn {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn:disabled {
+  background-color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.report-summary {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1rem;
+}
+
+.stat-box {
+  flex: 1;
+}
+
+.stat-box h3 {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.anomaly-list {
+  list-style: none;
+}
+
+.anomaly-item {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.anomaly-item.flagged_for_review {
+  background-color: var(--warning-bg);
+  border-left: 4px solid var(--warning-text);
+}
+
+.anomaly-item.skipped {
+  background-color: var(--danger-bg);
+  border-left: 4px solid var(--danger-text);
+}
+
+.row-details {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  background: rgba(255,255,255,0.5);
+  padding: 0.5rem;
+  border-radius: 4px;
 }
