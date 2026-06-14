@@ -11,7 +11,7 @@ const Dashboard = () => {
 
   const fetchBalances = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/balances');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/balances`);
       setData(response.data);
     } catch (err) {
       setError('Failed to load balances. Have you imported data yet?');
@@ -28,7 +28,7 @@ const Dashboard = () => {
     setSelectedUser(userName);
     setAuditLoading(true);
     try {
-      const response = await axios.get(`http://localhost:5000/api/audit/${userName}`);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/audit/${userName}`);
       setAuditData(response.data);
     } catch (err) {
       console.error(err);
@@ -44,7 +44,7 @@ const Dashboard = () => {
   if (selectedUser) {
     return (
       <div className="card">
-        <button className="btn" onClick={() => setSelectedUser(null)} style={{ marginBottom: '1.5rem', backgroundColor: 'var(--text-muted)' }}>
+        <button className="btn" onClick={() => setSelectedUser(null)} style={{ marginBottom: '1.5rem', backgroundColor: '#ffffff' }}>
           &larr; Back to Group Balances
         </button>
         <h2>Audit Trail: {selectedUser}</h2>
@@ -107,9 +107,9 @@ const Dashboard = () => {
               <li 
                 key={name} 
                 onClick={() => viewAudit(name)}
-                style={{ padding: '0.75rem', border: '1px solid transparent', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '4px' }}
-                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f9f9f9'; e.currentTarget.style.borderColor = 'var(--border)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.borderBottom = '1px solid var(--border)'; }}
+                style={{ padding: '1rem', border: '3px solid transparent', borderBottom: '3px solid var(--border)', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.1s', borderRadius: '4px' }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = 'var(--secondary)'; e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = '4px 4px 0px var(--shadow-color)'; e.currentTarget.style.transform = 'translate(-2px, -2px)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderBottom = '3px solid var(--border)'; }}
               >
                 <strong>{name}</strong>
                 <span style={{ color: amount >= 0 ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
@@ -130,8 +130,8 @@ const Dashboard = () => {
           ) : (
             <ul style={{ listStyle: 'none' }}>
               {data.settlements.map((settlement, idx) => (
-                <li key={idx} style={{ padding: '0.75rem', backgroundColor: '#e3f2fd', borderRadius: '4px', marginBottom: '0.5rem', borderLeft: '4px solid #1565c0' }}>
-                  <strong>{settlement.from}</strong> owes <strong>{settlement.to}</strong> <span style={{ fontWeight: 'bold', color: '#1565c0' }}>₹{settlement.amount}</span>
+                <li key={idx} style={{ padding: '1rem', backgroundColor: 'var(--tertiary)', borderRadius: '4px', marginBottom: '1rem', border: '3px solid var(--border)', boxShadow: '4px 4px 0px var(--shadow-color)' }}>
+                  <strong>{settlement.from}</strong> owes <strong>{settlement.to}</strong> <span style={{ fontWeight: '900', color: 'var(--text-main)', fontSize: '1.1rem', float: 'right' }}>₹{settlement.amount}</span>
                 </li>
               ))}
             </ul>

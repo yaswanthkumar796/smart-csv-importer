@@ -52,7 +52,7 @@ function App() {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/import', formData, {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/import`, formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${token}`
@@ -80,14 +80,14 @@ function App() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button 
             className="btn" 
-            style={{ backgroundColor: activeTab === 'dashboard' ? 'var(--primary)' : 'var(--text-muted)' }}
+            style={{ backgroundColor: activeTab === 'dashboard' ? 'var(--primary)' : '#ffffff' }}
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
           </button>
           <button 
             className="btn" 
-            style={{ backgroundColor: activeTab === 'import' ? 'var(--primary)' : 'var(--text-muted)' }}
+            style={{ backgroundColor: activeTab === 'import' ? 'var(--primary)' : '#ffffff' }}
             onClick={() => setActiveTab('import')}
           >
             Import

@@ -16,7 +16,7 @@ const ImportReport = ({ report }) => {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/import/confirm', { validRows });
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/import/confirm`, { validRows });
       setSuccess('All valid expenses have been successfully saved to the database!');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save data.');

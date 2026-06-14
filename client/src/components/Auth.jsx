@@ -16,7 +16,7 @@ const Auth = ({ onAuthSuccess }) => {
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
     try {
-      const response = await axios.post(`http://localhost:5000${endpoint}`, { name, password });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}${endpoint}`, { name, password });
       onAuthSuccess(response.data.user, response.data.token);
     } catch (err) {
       setError(err.response?.data?.error || 'Authentication failed');
