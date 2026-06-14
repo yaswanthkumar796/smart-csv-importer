@@ -9,6 +9,7 @@ generator client {
 model User {
   id           Int            @id @default(autoincrement())
   name         String         @unique
+  password     String?
   createdAt    DateTime       @default(now())
   expensesPaid Expense[]      @relation("PaidBy")
   splits       ExpenseSplit[]
@@ -42,6 +43,7 @@ model Expense {
   currency    String         @default("INR")
   paidById    Int
   splitType   String
+  notes       String?
   createdAt   DateTime       @default(now())
   group       Group          @relation(fields: [groupId], references: [id])
   paidBy      User           @relation("PaidBy", fields: [paidById], references: [id])
