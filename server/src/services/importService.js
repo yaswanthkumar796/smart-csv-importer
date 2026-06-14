@@ -1,5 +1,6 @@
 import fs from 'fs';
 import csv from 'csv-parser';
+import { calculateExactSplits } from '../utils/splitEngine.js';
 
 export const processCsv = (filePath) => {
   return new Promise((resolve, reject) => {
@@ -24,6 +25,22 @@ export const processCsv = (filePath) => {
           anomalyType = 'FOREIGN_CURRENCY';
         }
 
+        let exactSplits = null;
+        
+        if (!anomalyType || actionTaken !== 'skipped') {
+          try {
+            exactSplits = calculateExactSplits(
+              data.amount, 
+              data.split_type, 
+              data.split_with, 
+              data.split_details
+            );
+          } catch (error) {
+            anomalyType = `MATH_ERROR: ${error.message}`;
+            actionTaken = 'flagged_for_review';
+          }
+        }
+
         if (anomalyType) {
           anomalies.push({
             row: data,
@@ -32,8 +49,11 @@ export const processCsv = (filePath) => {
           });
         }
         
-        if (actionTaken !== 'skipped') {
-          results.push(data);
+        if (actionTaken !== 'skipped' && exactSplits) {
+          results.push({
+            ...data,
+            calculated_splits: exactSplits
+          });
         }
         
         seenRows.add(rowString);
