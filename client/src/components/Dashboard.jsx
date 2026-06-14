@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import AuditTrailPDF from './AuditTrailPDF';
+import { fetchDashboardData } from '../services/api';
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
@@ -25,8 +26,8 @@ const Dashboard = () => {
 
   const fetchBalances = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/balances`);
-      setData(response.data);
+      const dashboardData = await fetchDashboardData();
+      setData(dashboardData);
     } catch (err) {
       setError('Failed to load balances.');
     } finally {
@@ -87,7 +88,11 @@ const Dashboard = () => {
     }
   };
 
-  if (loading) return <div className="card">Loading dashboard...</div>;
+  if (loading) return (
+    <div className="card" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px', backgroundColor: 'var(--tertiary)' }}>
+      <h2 style={{ fontSize: '2rem', textTransform: 'uppercase', fontWeight: '900', letterSpacing: '2px' }}>LOADING SECURE DATA...</h2>
+    </div>
+  );
   if (error) return <div className="card"><p style={{ color: 'var(--danger-text)' }}>{error}</p></div>;
   if (!data) return null;
 
@@ -222,35 +227,52 @@ const Dashboard = () => {
             </ul>
           </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
           <div>
-            <h3 style={{ textTransform: 'uppercase', borderBottom: '3px solid var(--border)', paddingBottom: '0.5rem' }}>Settlements</h3>
-            {data.settlements.length === 0 ? (
-              <div style={{ padding: '1rem', border: '3px solid var(--border)', backgroundColor: 'var(--primary)', fontWeight: 'bold', marginTop: '1rem', boxShadow: '4px 4px 0px var(--shadow-color)' }}>
-                ALL SETTLED UP!
-              </div>
-            ) : (
-              <ul className="anomaly-list" style={{ marginTop: '1rem' }}>
-                {data.settlements.map((settlement, idx) => (
-                  <li key={idx} className="anomaly-item" style={{ flexDirection: 'column', gap: '0.5rem', backgroundColor: 'var(--secondary)' }}>
-                    <div style={{ fontSize: '1.1rem' }}>
-                      <strong>{settlement.from}</strong> owes <strong>{settlement.to}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '900', fontSize: '1.3rem' }}>₹{settlement.amount}</span>
-                      <button 
-                        className="btn" 
-                        onClick={() => handleSettle(settlement.from, settlement.to, settlement.amount)}
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', backgroundColor: '#fff' }}
-                      >
-                        MARK PAID
-                      </button>
-                    </div>
+            <h3 style={{ textTransform: 'uppercase', borderBottom: '3px solid var(--border)', paddingBottom: '0.5rem', marginBottom: '1rem' }}>Standard Settlements</h3>
+            {data.settlements && data.settlements.length > 0 ? (
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {data.settlements.map((s, idx) => (
+                  <li key={idx} style={{ padding: '0.5rem 0', borderBottom: '2px solid var(--border)' }}>
+                    <strong>{s.from}</strong> owes <strong>{s.to}</strong> ₹{s.amount}
+                    <button 
+                      className="btn" 
+                      style={{ padding: '4px 8px', marginLeft: '10px', fontSize: '0.8rem', backgroundColor: 'var(--secondary)' }}
+                      onClick={() => handleSettle(s.from, s.to, s.amount)}
+                    >
+                      MARK PAID
+                    </button>
                   </li>
                 ))}
               </ul>
+            ) : (
+              <div style={{ padding: '1rem', border: '3px solid var(--border)', backgroundColor: 'var(--primary)', fontWeight: 'bold', boxShadow: '4px 4px 0px var(--shadow-color)' }}>
+                ALL SETTLED UP!
+              </div>
             )}
           </div>
-
+          
+          <div className="card" style={{ backgroundColor: '#ffffff', border: '4px solid #000000', margin: 0 }}>
+            <h3 style={{ borderBottom: '4px solid #000000', paddingBottom: '0.5rem', marginBottom: '1rem', textTransform: 'uppercase' }}>🔥 OPTIMIZED SETTLEMENT PLAN</h3>
+            {data.optimizedSettlements && data.optimizedSettlements.length > 0 ? (
+              <ul style={{ listStyle: 'none', padding: 0 }}>
+                {data.optimizedSettlements.map((s, idx) => (
+                  <li key={idx} style={{ padding: '1rem 0', borderBottom: idx !== data.optimizedSettlements.length - 1 ? '2px solid var(--border)' : 'none', fontSize: '1.1rem' }}>
+                    <span style={{ backgroundColor: 'var(--primary)', padding: '2px 6px', fontWeight: 'bold' }}>{s.from}</span> pays <span style={{ backgroundColor: 'var(--secondary)', padding: '2px 6px', fontWeight: 'bold' }}>{s.to}</span> <strong>₹{s.amount}</strong>
+                    <button 
+                      className="btn" 
+                      style={{ padding: '6px 12px', marginLeft: '15px', fontSize: '0.9rem', backgroundColor: 'var(--primary)' }}
+                      onClick={() => handleSettle(s.from, s.to, s.amount)}
+                    >
+                      MARK PAID
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p style={{ fontWeight: 'bold' }}>No optimized settlements needed.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

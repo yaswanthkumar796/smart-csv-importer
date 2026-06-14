@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../utils/db.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
+import { optimizeSettlements } from '../utils/debtSimplifier.js';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ router.get('/', requireAuth, async (req, res) => {
     const accountId = req.user.id;
     const group = await prisma.group.findFirst({ where: { ownerId: accountId } });
     if (!group) {
-      return res.json({ balances: {}, settlements: [] });
+      return res.json({ balances: {}, settlements: [], optimizedSettlements: [] });
     }
 
     const expenses = await prisma.expense.findMany({
@@ -21,6 +22,7 @@ router.get('/', requireAuth, async (req, res) => {
     });
 
     const balances = {};
+    const pairwiseGraph = {};
 
     expenses.forEach(expense => {
       const payer = expense.paidBy.name;
@@ -29,50 +31,48 @@ router.get('/', requireAuth, async (req, res) => {
 
       expense.splits.forEach(split => {
         const debtor = split.user.name;
+        if (debtor !== payer) {
+          if (!pairwiseGraph[debtor]) pairwiseGraph[debtor] = {};
+          if (!pairwiseGraph[debtor][payer]) pairwiseGraph[debtor][payer] = 0;
+          pairwiseGraph[debtor][payer] += split.amountOwed;
+        }
+
         if (!balances[debtor]) balances[debtor] = 0;
         balances[debtor] -= split.amountOwed;
       });
     });
 
+    // Compute "Standard Settlements" (pairwise netting)
+    const standardSettlements = [];
+    const seenPairs = new Set();
+
+    for (const debtor in pairwiseGraph) {
+      for (const creditor in pairwiseGraph[debtor]) {
+        const pairId = [debtor, creditor].sort().join('-');
+        if (seenPairs.has(pairId)) continue;
+        seenPairs.add(pairId);
+
+        const debtorToCreditor = pairwiseGraph[debtor][creditor] || 0;
+        const creditorToDebtor = (pairwiseGraph[creditor] && pairwiseGraph[creditor][debtor]) ? pairwiseGraph[creditor][debtor] : 0;
+
+        const net = debtorToCreditor - creditorToDebtor;
+        if (net > 0) {
+          standardSettlements.push({ from: debtor, to: creditor, amount: Math.round(net * 100) / 100 });
+        } else if (net < 0) {
+          standardSettlements.push({ from: creditor, to: debtor, amount: Math.round(Math.abs(net) * 100) / 100 });
+        }
+      }
+    }
+
+    // Clean up net balances for optimized function
     for (const user in balances) {
       balances[user] = Math.round(balances[user] * 100) / 100;
       if (Math.abs(balances[user]) < 0.01) delete balances[user];
     }
 
-    const debtors = [];
-    const creditors = [];
+    const optimizedSettlements = optimizeSettlements(balances);
 
-    for (const [name, amount] of Object.entries(balances)) {
-      if (amount < 0) debtors.push({ name, amount: Math.abs(amount) });
-      else if (amount > 0) creditors.push({ name, amount });
-    }
-
-    debtors.sort((a, b) => b.amount - a.amount);
-    creditors.sort((a, b) => b.amount - a.amount);
-
-    const settlements = [];
-    let i = 0;
-    let j = 0;
-
-    while (i < debtors.length && j < creditors.length) {
-      const debtor = debtors[i];
-      const creditor = creditors[j];
-      const amount = Math.min(debtor.amount, creditor.amount);
-
-      settlements.push({
-        from: debtor.name,
-        to: creditor.name,
-        amount: Math.round(amount * 100) / 100
-      });
-
-      debtor.amount -= amount;
-      creditor.amount -= amount;
-
-      if (Math.abs(debtor.amount) < 0.01) i++;
-      if (Math.abs(creditor.amount) < 0.01) j++;
-    }
-
-    res.json({ balances, settlements });
+    res.json({ balances, settlements: standardSettlements, optimizedSettlements });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch balances' });
   }

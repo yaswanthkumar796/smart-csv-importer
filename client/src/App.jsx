@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+
+// Initialize token synchronously if it exists in localStorage
+const initialToken = localStorage.getItem('token');
+if (initialToken) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}
 import ImportReport from './components/ImportReport';
 import Dashboard from './components/Dashboard';
 import Auth from './components/Auth';
@@ -19,24 +25,16 @@ function App() {
     if (savedUser && savedToken) {
       setCurrentUser(JSON.parse(savedUser));
       setToken(savedToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
     }
   }, []);
-
-  useEffect(() => {
-    const interceptor = axios.interceptors.request.use(config => {
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-    return () => axios.interceptors.request.eject(interceptor);
-  }, [token]);
 
   const handleAuthSuccess = (user, jwtToken) => {
     setCurrentUser(user);
     setToken(jwtToken);
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('token', jwtToken);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${jwtToken}`;
   };
 
   const handleLogout = () => {
@@ -44,6 +42,7 @@ function App() {
     setToken(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
   };
 
   const handleFileChange = (e) => {
