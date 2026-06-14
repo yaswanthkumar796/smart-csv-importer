@@ -20,19 +20,25 @@ router.get('/:userName', async (req, res) => {
 
     user.expensesPaid.forEach(exp => {
       history.push({
+        recordId: `credit-${exp.id}`,
+        expenseId: exp.id,
         date: exp.date,
         description: `Paid for: ${exp.description}`,
         type: 'credit',
-        amount: exp.amount
+        amount: exp.amount,
+        notes: exp.notes
       });
     });
 
     user.splits.forEach(split => {
       history.push({
+        recordId: `debt-${split.id}`,
+        expenseId: split.expense.id,
         date: split.expense.date,
         description: `Owe for split: ${split.expense.description}`,
         type: 'debt',
-        amount: split.amountOwed
+        amount: split.amountOwed,
+        notes: split.expense.notes
       });
     });
 

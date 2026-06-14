@@ -8,6 +8,11 @@ const Dashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [auditData, setAuditData] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState({});
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const [desc, setDesc] = useState('');
   const [amount, setAmount] = useState('');
@@ -113,14 +118,33 @@ const Dashboard = () => {
                 </thead>
                 <tbody>
                   {auditData.auditTrail.map((record, idx) => (
-                    <tr key={idx}>
-                      <td style={{ color: 'var(--text-muted)' }}>{new Date(record.date).toLocaleDateString()}</td>
-                      <td>{record.description}</td>
-                      <td style={{ color: record.type === 'credit' ? '#2e7d32' : 'var(--danger-bg)', fontWeight: 'bold' }}>
-                        {record.type === 'credit' ? `+ ₹${record.amount}` : `- ₹${record.amount}`}
-                      </td>
-                      <td style={{ fontWeight: '900' }}>₹{record.runningBalance}</td>
-                    </tr>
+                    <React.Fragment key={idx}>
+                      <tr style={{ borderBottom: '2px solid var(--border)' }}>
+                        <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{new Date(record.date).toLocaleDateString()}</td>
+                        <td style={{ padding: '12px' }}>{record.description}</td>
+                        <td style={{ padding: '12px', color: record.type === 'credit' ? '#2e7d32' : 'var(--danger-bg)', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span>{record.type === 'credit' ? `+ ₹${record.amount}` : `- ₹${record.amount}`}</span>
+                          {record.notes && record.notes.includes('Converted') && (
+                            <button 
+                              onClick={() => toggleRow(record.recordId)}
+                              style={{ marginLeft: '10px', background: 'var(--primary)', border: '3px solid var(--border)', cursor: 'pointer', padding: '4px 8px', fontWeight: '900', boxShadow: '2px 2px 0px var(--shadow-color)' }}
+                            >
+                              {expandedRows[record.recordId] ? 'v' : '>'}
+                            </button>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px', fontWeight: '900' }}>₹{record.runningBalance}</td>
+                      </tr>
+                      {expandedRows[record.recordId] && record.notes && (
+                        <tr>
+                          <td colSpan="4" style={{ padding: 0 }}>
+                            <div style={{ backgroundColor: 'var(--tertiary)', borderBottom: '3px solid var(--border)', borderTop: '3px solid var(--border)', padding: '12px', paddingLeft: '40px', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                              💱 {record.notes}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
