@@ -89,6 +89,15 @@ const Dashboard = () => {
   if (error) return <div className="card"><p style={{ color: 'var(--danger-text)' }}>{error}</p></div>;
   if (!data) return null;
 
+  if (Object.keys(data.balances).length === 0) {
+    return (
+      <div className="card" style={{ textAlign: 'center', padding: '3rem', border: '4px solid var(--border)', boxShadow: '8px 8px 0px var(--shadow-color)', backgroundColor: 'var(--primary)' }}>
+        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', textTransform: 'uppercase', fontWeight: '900' }}>Upload Your First CSV</h1>
+        <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Your workspace is completely empty. Head over to the Import tab to get started!</p>
+      </div>
+    );
+  }
+
   if (selectedUser) {
     return (
       <div className="card">

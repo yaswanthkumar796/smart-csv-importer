@@ -1,13 +1,19 @@
 import express from 'express';
 import prisma from '../utils/db.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/:userName', async (req, res) => {
+router.get('/:userName', requireAuth, async (req, res) => {
   try {
     const { userName } = req.params;
+    const accountId = req.user.id;
+
+    const group = await prisma.group.findFirst({ where: { ownerId: accountId } });
+    if (!group) return res.status(404).json({ error: 'No data found' });
+
     const user = await prisma.user.findUnique({
-      where: { name: userName },
+      where: { name_groupId: { name: userName, groupId: group.id } },
       include: {
         expensesPaid: true,
         splits: { include: { expense: true } }

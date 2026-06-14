@@ -1,30 +1,32 @@
 import express from 'express';
 import prisma from '../utils/db.js';
 import { calculateExactSplits } from '../utils/splitEngine.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
   try {
     const { description, amount, paid_by, date, split_with } = req.body;
+    const accountId = req.user.id;
     
     const exactSplits = calculateExactSplits(amount, 'equal', split_with, '');
     
+    let group = await prisma.group.findFirst({ where: { ownerId: accountId } });
+    if (!group) group = await prisma.group.create({ data: { name: 'Flatmates', ownerId: accountId } });
+
     const userNames = new Set([paid_by.trim(), ...Object.keys(exactSplits)]);
     const userMap = {};
     
     for (const name of userNames) {
       if (!name) continue;
       const user = await prisma.user.upsert({
-        where: { name },
+        where: { name_groupId: { name, groupId: group.id } },
         update: {},
-        create: { name }
+        create: { name, groupId: group.id }
       });
       userMap[name] = user.id;
     }
-
-    let group = await prisma.group.findFirst({ where: { name: 'Flatmates' } });
-    if (!group) group = await prisma.group.create({ data: { name: 'Flatmates' } });
 
     const [year, month, day] = date.split('-');
     
@@ -53,14 +55,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.post('/settle', async (req, res) => {
+router.post('/settle', requireAuth, async (req, res) => {
   try {
     const { from, to, amount } = req.body;
+    const accountId = req.user.id;
 
-    const userFrom = await prisma.user.upsert({ where: { name: from }, update: {}, create: { name: from } });
-    const userTo = await prisma.user.upsert({ where: { name: to }, update: {}, create: { name: to } });
+    let group = await prisma.group.findFirst({ where: { ownerId: accountId } });
+    if (!group) group = await prisma.group.create({ data: { name: 'Flatmates', ownerId: accountId } });
 
-    let group = await prisma.group.findFirst({ where: { name: 'Flatmates' } });
+    const userFrom = await prisma.user.upsert({ where: { name_groupId: { name: from, groupId: group.id } }, update: {}, create: { name: from, groupId: group.id } });
+    const userTo = await prisma.user.upsert({ where: { name_groupId: { name: to, groupId: group.id } }, update: {}, create: { name: to, groupId: group.id } });
 
     const expense = await prisma.expense.create({
       data: {

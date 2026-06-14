@@ -3,11 +3,12 @@ import multer from 'multer';
 import { processCsv } from '../services/importService.js';
 import fs from 'fs';
 import prisma from '../utils/db.js';
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-router.post('/', upload.single('file'), async (req, res) => {
+router.post('/', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const report = await processCsv(req.file.path);
@@ -18,10 +19,17 @@ router.post('/', upload.single('file'), async (req, res) => {
   }
 });
 
-router.post('/confirm', async (req, res) => {
+router.post('/confirm', requireAuth, async (req, res) => {
   try {
     const { validRows } = req.body;
     if (!validRows || !validRows.length) return res.status(400).json({ error: 'No data to save' });
+    const accountId = req.user.id;
+
+    // Find or create the group for this account
+    let group = await prisma.group.findFirst({ where: { ownerId: accountId } });
+    if (!group) {
+      group = await prisma.group.create({ data: { name: 'Flatmates', ownerId: accountId } });
+    }
 
     const userNames = new Set();
     validRows.forEach(row => {
@@ -34,16 +42,11 @@ router.post('/confirm', async (req, res) => {
     const userMap = {};
     for (const name of userNames) {
       const user = await prisma.user.upsert({
-        where: { name },
+        where: { name_groupId: { name, groupId: group.id } },
         update: {},
-        create: { name }
+        create: { name, groupId: group.id }
       });
       userMap[name] = user.id;
-    }
-
-    let group = await prisma.group.findFirst({ where: { name: 'Flatmates' } });
-    if (!group) {
-      group = await prisma.group.create({ data: { name: 'Flatmates' } });
     }
 
     for (const row of validRows) {

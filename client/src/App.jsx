@@ -22,6 +22,16 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    const interceptor = axios.interceptors.request.use(config => {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    return () => axios.interceptors.request.eject(interceptor);
+  }, [token]);
+
   const handleAuthSuccess = (user, jwtToken) => {
     setCurrentUser(user);
     setToken(jwtToken);
@@ -54,8 +64,7 @@ function App() {
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/import`, formData, {
         headers: { 
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'multipart/form-data'
         }
       });
       setReport(response.data.data);

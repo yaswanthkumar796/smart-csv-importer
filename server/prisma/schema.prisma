@@ -7,32 +7,34 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model User {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  password     String?
-  createdAt    DateTime       @default(now())
-  expensesPaid Expense[]      @relation("PaidBy")
-  splits       ExpenseSplit[]
-  groupMembers GroupMember[]
+model Account {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  groups    Group[]  @relation("AccountGroups")
 }
 
 model Group {
-  id        Int           @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
-  createdAt DateTime      @default(now())
-  members   GroupMember[]
+  ownerId   Int
+  createdAt DateTime  @default(now())
+  owner     Account   @relation("AccountGroups", fields: [ownerId], references: [id])
+  users     User[]    @relation("GroupUsers")
   expenses  Expense[]
 }
 
-model GroupMember {
-  id       Int       @id @default(autoincrement())
-  userId   Int
-  groupId  Int
-  joinedAt DateTime  @default(now())
-  leftAt   DateTime?
-  user     User      @relation(fields: [userId], references: [id])
-  group    Group     @relation(fields: [groupId], references: [id])
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String
+  groupId      Int
+  createdAt    DateTime       @default(now())
+  group        Group          @relation("GroupUsers", fields: [groupId], references: [id])
+  expensesPaid Expense[]      @relation("PaidBy")
+  splits       ExpenseSplit[]
+
+  @@unique([name, groupId])
 }
 
 model Expense {
@@ -56,6 +58,6 @@ model ExpenseSplit {
   expenseId  Int
   userId     Int
   amountOwed Float
-  expense    Expense @relation(fields: [expenseId], references: [id])
+  expense    Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   user       User    @relation(fields: [userId], references: [id])
 }
