@@ -25,7 +25,7 @@ router.post('/confirm', async (req, res) => {
 
     const userNames = new Set();
     validRows.forEach(row => {
-      if (row.paid_by) userNames.add(row.paid_by.trim());
+      if (row.paid_by && row.paid_by.trim()) userNames.add(row.paid_by.trim());
       if (row.calculated_splits) {
         Object.keys(row.calculated_splits).forEach(name => userNames.add(name.trim()));
       }
@@ -47,19 +47,33 @@ router.post('/confirm', async (req, res) => {
     }
 
     for (const row of validRows) {
-      const [day, month, year] = row.date.split('-');
-      const expenseDate = new Date(`${year}-${month}-${day}`);
-      const paidById = userMap[row.paid_by.trim()];
+      const rawDate = row.date ? String(row.date).trim() : '';
+      let expenseDate = new Date();
+      if (rawDate.includes('-')) {
+        const [day, month, year] = rawDate.split('-');
+        if (day && month && year) {
+          expenseDate = new Date(`${year}-${month}-${day}`);
+        }
+      } else if (rawDate) {
+        expenseDate = new Date(rawDate);
+      }
+      if (isNaN(expenseDate.getTime())) expenseDate = new Date();
+      const paidByStr = row.paid_by ? row.paid_by.trim() : '';
+      const paidById = userMap[paidByStr] || null;
+
+      if (!paidById) {
+        throw new Error(`User not found for paid_by: "${paidByStr}" in row: ${row.description}`);
+      }
 
       const expense = await prisma.expense.create({
         data: {
           groupId: group.id,
-          description: row.description,
+          description: row.description || '',
           date: expenseDate,
-          amount: Number(row.amount),
-          currency: row.currency || 'INR',
+          amount: Number(row.amount) || 0,
+          currency: row.currency ? row.currency.trim() : 'INR',
           paidById: paidById,
-          splitType: row.split_type,
+          splitType: row.split_type || 'unknown',
           notes: row.notes || ''
         }
       });
@@ -77,7 +91,8 @@ router.post('/confirm', async (req, res) => {
 
     res.json({ message: 'Data successfully saved to database' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to save to database' });
+    console.error('Database save error:', error);
+    res.status(500).json({ error: error.message || 'Failed to save to database' });
   }
 });
 

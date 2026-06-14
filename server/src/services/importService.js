@@ -23,6 +23,9 @@ export const processCsv = (filePath) => {
           anomalyType = 'INVALID_AMOUNT';
         } else if (data.currency && data.currency.trim().toUpperCase() !== 'INR') {
           anomalyType = 'FOREIGN_CURRENCY';
+        } else if (!data.paid_by || !data.paid_by.trim()) {
+          anomalyType = 'MISSING_PAID_BY';
+          actionTaken = 'skipped';
         }
 
         let exactSplits = null;
