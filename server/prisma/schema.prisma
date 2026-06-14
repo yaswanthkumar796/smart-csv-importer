@@ -1,13 +1,58 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
-
 datasource db {
   provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  createdAt    DateTime       @default(now())
+  expensesPaid Expense[]      @relation("PaidBy")
+  splits       ExpenseSplit[]
+  groupMembers GroupMember[]
+}
+
+model Group {
+  id        Int           @id @default(autoincrement())
+  name      String
+  createdAt DateTime      @default(now())
+  members   GroupMember[]
+  expenses  Expense[]
+}
+
+model GroupMember {
+  id       Int       @id @default(autoincrement())
+  userId   Int
+  groupId  Int
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  user     User      @relation(fields: [userId], references: [id])
+  group    Group     @relation(fields: [groupId], references: [id])
+}
+
+model Expense {
+  id          Int            @id @default(autoincrement())
+  groupId     Int
+  description String
+  date        DateTime
+  amount      Float
+  currency    String         @default("INR")
+  paidById    Int
+  splitType   String
+  createdAt   DateTime       @default(now())
+  group       Group          @relation(fields: [groupId], references: [id])
+  paidBy      User           @relation("PaidBy", fields: [paidById], references: [id])
+  splits      ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id         Int     @id @default(autoincrement())
+  expenseId  Int
+  userId     Int
+  amountOwed Float
+  expense    Expense @relation(fields: [expenseId], references: [id])
+  user       User    @relation(fields: [userId], references: [id])
 }
