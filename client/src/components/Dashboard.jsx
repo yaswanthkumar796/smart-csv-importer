@@ -226,6 +226,7 @@ const Dashboard = () => {
               ))}
             </ul>
           </div>
+        </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginTop: '2rem' }}>
           <div>
