@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import AuditTrailPDF from './AuditTrailPDF';
 
 const Dashboard = () => {
   const [data, setData] = useState(null);
@@ -101,9 +103,24 @@ const Dashboard = () => {
   if (selectedUser) {
     return (
       <div className="card">
-        <button className="btn" onClick={() => setSelectedUser(null)} style={{ marginBottom: '1.5rem', backgroundColor: 'var(--tertiary)' }}>
-          BACK TO DASHBOARD
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <button className="btn" onClick={() => setSelectedUser(null)} style={{ backgroundColor: 'var(--tertiary)' }}>
+            BACK TO DASHBOARD
+          </button>
+          
+          {!auditLoading && auditData && (
+            <PDFDownloadLink 
+              document={<AuditTrailPDF userName={selectedUser} finalBalance={auditData.finalBalance} auditTrail={auditData.auditTrail} />}
+              fileName={`${selectedUser}_Audit_Statement.pdf`}
+            >
+              {({ loading }) => (
+                <button className="btn" style={{ backgroundColor: '#ffffff' }}>
+                  {loading ? 'PREPARING...' : 'DOWNLOAD STATEMENT (PDF)'}
+                </button>
+              )}
+            </PDFDownloadLink>
+          )}
+        </div>
         <h2>Audit Trail: {selectedUser}</h2>
         {auditLoading ? (
           <p style={{ marginTop: '1rem', fontWeight: 'bold' }}>Loading precise records...</p>
