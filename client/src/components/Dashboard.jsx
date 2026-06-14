@@ -5,6 +5,9 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [auditData, setAuditData] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchBalances = async () => {
     try {
@@ -21,9 +24,73 @@ const Dashboard = () => {
     fetchBalances();
   }, []);
 
+  const viewAudit = async (userName) => {
+    setSelectedUser(userName);
+    setAuditLoading(true);
+    try {
+      const response = await axios.get(`http://localhost:5000/api/audit/${userName}`);
+      setAuditData(response.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
   if (loading) return <div className="card">Loading dashboard...</div>;
   if (error) return <div className="card"><p style={{ color: 'var(--danger-text)' }}>{error}</p></div>;
   if (!data) return null;
+
+  if (selectedUser) {
+    return (
+      <div className="card">
+        <button className="btn" onClick={() => setSelectedUser(null)} style={{ marginBottom: '1.5rem', backgroundColor: 'var(--text-muted)' }}>
+          &larr; Back to Group Balances
+        </button>
+        <h2>Audit Trail: {selectedUser}</h2>
+        {auditLoading ? (
+          <p style={{ marginTop: '1rem' }}>Loading precise records...</p>
+        ) : auditData ? (
+          <div style={{ marginTop: '1rem' }}>
+            <p style={{ marginBottom: '1.5rem', fontSize: '1.2rem' }}>
+              <strong>Net Balance: </strong> 
+              <span style={{ color: auditData.finalBalance >= 0 ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
+                {auditData.finalBalance >= 0 ? `+ ₹${auditData.finalBalance} (Gets back)` : `- ₹${Math.abs(auditData.finalBalance)} (Owes)`}
+              </span>
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
+                <thead>
+                  <tr style={{ backgroundColor: '#f4f7f6', borderBottom: '2px solid var(--border)' }}>
+                    <th style={{ padding: '12px' }}>Date</th>
+                    <th style={{ padding: '12px' }}>Description</th>
+                    <th style={{ padding: '12px' }}>Impact</th>
+                    <th style={{ padding: '12px' }}>Running Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditData.auditTrail.map((record, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{new Date(record.date).toLocaleDateString()}</td>
+                      <td style={{ padding: '12px' }}>{record.description}</td>
+                      <td style={{ padding: '12px', color: record.type === 'credit' ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
+                        {record.type === 'credit' ? `+ ₹${record.amount}` : `- ₹${record.amount}`}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: 'bold', color: record.runningBalance < 0 ? '#c62828' : 'inherit' }}>
+                        ₹{record.runningBalance}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <p>No records found.</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -32,9 +99,18 @@ const Dashboard = () => {
         
         <div>
           <h3>Net Balances</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            Click any user to view their exact audit trail (Rohan's Request).
+          </p>
           <ul style={{ listStyle: 'none', marginTop: '1rem' }}>
             {Object.entries(data.balances).map(([name, amount]) => (
-              <li key={name} style={{ padding: '0.75rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
+              <li 
+                key={name} 
+                onClick={() => viewAudit(name)}
+                style={{ padding: '0.75rem', border: '1px solid transparent', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s', borderRadius: '4px' }}
+                onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f9f9f9'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.borderBottom = '1px solid var(--border)'; }}
+              >
                 <strong>{name}</strong>
                 <span style={{ color: amount >= 0 ? '#2e7d32' : '#c62828', fontWeight: 'bold' }}>
                   {amount >= 0 ? `+ ₹${amount}` : `- ₹${Math.abs(amount)}`}
@@ -50,7 +126,7 @@ const Dashboard = () => {
             Aisha's Request: "Who pays whom, how much, done."
           </p>
           {data.settlements.length === 0 ? (
-            <p>Everyone is settled up!</p>
+            <p style={{ color: '#2e7d32', fontWeight: 'bold' }}>Everyone is settled up!</p>
           ) : (
             <ul style={{ listStyle: 'none' }}>
               {data.settlements.map((settlement, idx) => (
